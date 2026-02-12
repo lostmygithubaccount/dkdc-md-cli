@@ -1,10 +1,12 @@
-# dkdc-md-cli
+# MotherDuck CLI
 
 CLI for the [MotherDuck REST API](https://motherduck.com/docs/sql-reference/rest-api/motherduck-rest-api/).
 
+**Important**: This is a personal project. I am not affiliated with MotherDuck.
+
 ## Install
 
-Pre-built binaries are available for Linux and macOS via Python. Windows users should install via `cargo` or use macOS/Linux.
+Pre-built binaries are available for Linux and macOS via Python (`uv`). Windows users should install via `cargo` or use macOS/Linux.
 
 uv:
 
@@ -12,16 +14,16 @@ uv:
 uv tool install dkdc-md-cli
 ```
 
-uvx:
-
-```bash
-uvx --from dkdc-md-cli md
-```
-
 cargo:
 
 ```bash
 cargo install dkdc-md-cli
+```
+
+Either option will install the `md` command globally. You can use `uvx` to run it without installing:
+
+```bash
+uvx --from dkdc-md-cli md
 ```
 
 ## Authentication
