@@ -1,62 +1,96 @@
 # dkdc-md-cli
 
-CLI for the [MotherDuck](https://motherduck.com) REST API.
+CLI for the [MotherDuck REST API](https://motherduck.com/docs/sql-reference/rest-api/motherduck-rest-api/).
 
-## install
+## Install
+
+Pre-built binaries are available for Linux and macOS via Python. Windows users should install via `cargo` or use macOS/Linux.
 
 ```bash
-# from source (Rust binary)
-cargo install --path dkdc-md-cli
+# Python (PyPI) — includes pre-built wheels for Linux and macOS
+uv tool install dkdc-md-cli
+uvx --from dkdc-md-cli md
 
-# from source (Python)
-uv tool install .
+# Rust (crates.io)
+cargo install dkdc-md-cli
 ```
 
-## authentication
+## Authentication
 
-Set one of the following environment variables:
+Set a MotherDuck API token via environment variable:
 
 ```bash
 export MOTHERDUCK_TOKEN="your-token-here"
 ```
 
-Also accepted: `motherduck_token`, `MOTHERDUCK_API_KEY`, `motherduck_api_key`.
+Token resolution order (first non-empty wins):
 
-## usage
+1. `--token` flag (pass `-` to read from stdin)
+2. `motherduck_token`
+3. `MOTHERDUCK_TOKEN`
+4. `motherduck_api_key`
+5. `MOTHERDUCK_API_KEY`
+
+You can also pass in `--token` to commands.
+
+## Usage
+
+```
+md [--output text|json] [--token TOKEN] [--yes] <command>
+```
+
+### Global flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output` | `-o` | Output format: `text` (default) or `json` |
+| `--token` | | API token (overrides env vars; `-` reads from stdin) |
+| `--yes` | `-y` | Skip confirmation prompts |
+
+### `service-account`
 
 ```bash
-# service accounts
-md service-account create myaccount
-md service-account delete myaccount
+# Create a service account
+md service-account create <username>
 
-# duckling configuration
-md duckling get myaccount
-md duckling set myaccount --rw-size pulse --rs-size pulse --flock-size 1
+# Delete a service account (prompts for confirmation)
+md service-account delete <username>
+```
 
-# access tokens
-md token list myaccount
-md token create myaccount --name my-token --ttl 3600
-md token delete myaccount <token-id>
+### `token`
 
-# active accounts
+```bash
+# List tokens for a user
+md token list <username>
+
+# Create a new token
+md token create <username> --name <name> [--ttl <seconds>] [--token-type <type>]
+
+# Delete a token (prompts for confirmation)
+md token delete <username> <token_id>
+```
+
+`--ttl`: time-to-live in seconds (300–31536000). Omit for no expiration.
+
+`--token-type`: `read-write` (default) or `read-scaling`.
+
+### `duckling`
+
+```bash
+# Get current duckling config
+md duckling get <username>
+
+# Set duckling config (at least one override required)
+md duckling set <username> [--rw-size <size>] [--rs-size <size>] [--flock-size <n>]
+```
+
+Instance sizes: `pulse`, `standard`, `jumbo`, `mega`, `giga`.
+
+Flock size: 0–64. `duckling set` fetches the current config and merges your overrides, so you only need to specify what you're changing.
+
+### `account`
+
+```bash
+# List active accounts and their ducklings
 md account list-active
-
-# JSON output (for piping to jq, etc.)
-md token list myaccount -o json
-```
-
-## development
-
-```bash
-bin/setup     # install rustup + uv
-bin/build     # build Rust + Python
-bin/check     # lint + test
-bin/format    # auto-format
-bin/install   # install locally
-```
-
-Integration tests (requires `MOTHERDUCK_TOKEN`):
-
-```bash
-tests/integration-test
 ```
