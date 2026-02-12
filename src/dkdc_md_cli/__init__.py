@@ -1,6 +1,6 @@
 import sys
 
-from dkdc_md.core import run as _run
+from dkdc_md_cli.core import run as _run
 
 __all__ = ["run", "main"]
 
