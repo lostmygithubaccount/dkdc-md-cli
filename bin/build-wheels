@@ -3,6 +3,6 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 echo "Building dkdc-md-cli wheels..."
-uv run maturin build --release --out dist "$@"
+uv run maturin build --release "$@"
 
 echo "Wheel build complete!"
