@@ -6,12 +6,21 @@ CLI for the [MotherDuck REST API](https://motherduck.com/docs/sql-reference/rest
 
 Pre-built binaries are available for Linux and macOS via Python. Windows users should install via `cargo` or use macOS/Linux.
 
-```bash
-# Python (PyPI) — includes pre-built wheels for Linux and macOS
-uv tool install dkdc-md-cli
-uvx --from dkdc-md-cli md
+uv:
 
-# Rust (crates.io)
+```bash
+uv tool install dkdc-md-cli
+```
+
+uvx:
+
+```bash
+uvx --from dkdc-md-cli md
+```
+
+cargo:
+
+```bash
 cargo install dkdc-md-cli
 ```
 
@@ -30,8 +39,6 @@ Token resolution order (first non-empty wins):
 3. `MOTHERDUCK_TOKEN`
 4. `motherduck_api_key`
 5. `MOTHERDUCK_API_KEY`
-
-You can also pass in `--token` to commands.
 
 ## Usage
 
