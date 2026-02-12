@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+echo "Building dkdc-md-cli..."
+cargo build --manifest-path dkdc-md-cli/Cargo.toml "$@"
+
+echo "Rust build complete!"

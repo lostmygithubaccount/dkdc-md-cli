@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+SERVICE_ACCOUNT="md_cli_test_$(date +%s)"
+
+info()  { printf '\033[1;34m[test]\033[0m %s\n' "$*"; }
+pass()  { printf '\033[1;32m[pass]\033[0m %s\n' "$*"; }
+fail()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; }
+
+cleanup() {
+    info "cleaning up service account ${SERVICE_ACCOUNT}..."
+    cargo run --quiet --manifest-path dkdc-md-cli/Cargo.toml -- --yes service-account delete "$SERVICE_ACCOUNT" -o json 2>/dev/null || true
+}
+trap cleanup EXIT
+
+assert_json_field() {
+    local json="$1" jq_path="$2" expected="$3"
+    local actual
+    actual=$(echo "$json" | jq -r "$jq_path")
+    if [[ "$actual" == "$expected" ]]; then
+        pass "$jq_path == $expected"
+    else
+        fail "$jq_path: expected '$expected', got '$actual'"
+        exit 1
+    fi
+}
+
+MD="cargo run --quiet --manifest-path dkdc-md-cli/Cargo.toml --"
+
+# ── 1. create service account (API defaults: standard, flock_size=4) ──
+
+info "creating service account: ${SERVICE_ACCOUNT}"
+result=$($MD service-account create "$SERVICE_ACCOUNT" -o json)
+assert_json_field "$result" ".username" "$SERVICE_ACCOUNT"
+pass "service account created"
+
+# ── 2. verify API default duckling config ──
+
+info "verifying API default duckling config..."
+result=$($MD duckling get "$SERVICE_ACCOUNT" -o json)
+assert_json_field "$result" ".read_write.instance_size" "standard"
+assert_json_field "$result" ".read_scaling.instance_size" "standard"
+assert_json_field "$result" ".read_scaling.flock_size" "4"
+pass "API defaults verified: standard, flock_size=4"
+
+# ── 3. set duckling config to pulse, flock_size=1 ──
+
+info "setting duckling config to pulse, flock_size=1..."
+$MD duckling set "$SERVICE_ACCOUNT" --rw-size pulse --rs-size pulse --flock-size 1 -o json >/dev/null
+pass "duckling config set to pulse"
+
+info "verifying duckling config is pulse..."
+result=$($MD duckling get "$SERVICE_ACCOUNT" -o json)
+assert_json_field "$result" ".read_write.instance_size" "pulse"
+assert_json_field "$result" ".read_scaling.instance_size" "pulse"
+assert_json_field "$result" ".read_scaling.flock_size" "1"
+pass "duckling config verified: pulse, flock_size=1"
+
+# ── 4. set duckling config to standard, flock_size=2 ──
+
+info "setting duckling config to standard, flock_size=2..."
+$MD duckling set "$SERVICE_ACCOUNT" --rw-size standard --rs-size standard --flock-size 2 -o json >/dev/null
+pass "duckling config set to standard"
+
+info "verifying duckling config is standard..."
+result=$($MD duckling get "$SERVICE_ACCOUNT" -o json)
+assert_json_field "$result" ".read_write.instance_size" "standard"
+assert_json_field "$result" ".read_scaling.instance_size" "standard"
+assert_json_field "$result" ".read_scaling.flock_size" "2"
+pass "duckling config verified: standard, flock_size=2"
+
+# ── 5. set back to pulse via partial override ──
+
+info "setting only rw-size to pulse (rs should stay standard)..."
+$MD duckling set "$SERVICE_ACCOUNT" --rw-size pulse -o json >/dev/null
+result=$($MD duckling get "$SERVICE_ACCOUNT" -o json)
+assert_json_field "$result" ".read_write.instance_size" "pulse"
+assert_json_field "$result" ".read_scaling.instance_size" "standard"
+pass "partial override verified: rw=pulse, rs=standard"
+
+# ── 6. create token ──
+
+info "creating token..."
+result=$($MD token create "$SERVICE_ACCOUNT" --name "test-token" --ttl 3600 -o json)
+TOKEN_ID=$(echo "$result" | jq -r '.id')
+info "token created: ${TOKEN_ID}"
+pass "token created"
+
+# ── 7. verify token appears in list ──
+
+info "listing tokens..."
+result=$($MD token list "$SERVICE_ACCOUNT" -o json)
+found=$(echo "$result" | jq --arg id "$TOKEN_ID" '[.tokens // [] | .[] | select(.id == $id)] | length')
+if [[ "$found" -gt 0 ]]; then
+    pass "token found in list"
+else
+    fail "token ${TOKEN_ID} not found in list"
+    exit 1
+fi
+
+# ── 8. delete token ──
+
+info "deleting token ${TOKEN_ID}..."
+$MD --yes token delete "$SERVICE_ACCOUNT" "$TOKEN_ID" -o json >/dev/null
+pass "token deleted"
+
+# ── 9. delete service account ──
+
+info "deleting service account ${SERVICE_ACCOUNT}..."
+$MD --yes service-account delete "$SERVICE_ACCOUNT" -o json >/dev/null
+pass "service account deleted"
+
+trap - EXIT
+
+echo ""
+pass "all integration tests passed!"

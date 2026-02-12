@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Mirror dkdc-md-cli source from the dkdc monorepo to lostmygithubaccount/dkdc-md-cli.
+# Uses rsync to copy files, then commits and pushes to the public repo.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MD_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PUBLIC_REPO="lostmygithubaccount/dkdc-md-cli"
+CLONE_DIR="${MD_DIR}/.sync-repo"
+
+info()  { printf '\033[1;35m[sync]\033[0m %s\n' "$*"; }
+err()   { printf '\033[1;31m[sync]\033[0m %s\n' "$*" >&2; }
+
+# ──────────────────────────────────────
+# fresh clone of the public repo
+# ──────────────────────────────────────
+
+rm -rf "$CLONE_DIR"
+info "cloning public repo..."
+gh repo clone "$PUBLIC_REPO" "$CLONE_DIR" 2>/dev/null || {
+    # empty repo — initialize locally
+    mkdir -p "$CLONE_DIR"
+    git -C "$CLONE_DIR" init
+    git -C "$CLONE_DIR" remote add origin "https://github.com/${PUBLIC_REPO}.git"
+    git -C "$CLONE_DIR" checkout -b main
+}
+
+# ──────────────────────────────────────
+# sync files
+# ──────────────────────────────────────
+
+info "syncing files..."
+
+rsync -a --delete \
+    --exclude='.git/' \
+    --exclude='.sync-repo/' \
+    --exclude='target/' \
+    --exclude='.venv/' \
+    --exclude='.ruff_cache/' \
+    --exclude='__pycache__/' \
+    --exclude='*.pyc' \
+    --exclude='*.so' \
+    --exclude='*.egg-info/' \
+    --exclude='.DS_Store' \
+    "$MD_DIR/" "$CLONE_DIR/"
+
+# ──────────────────────────────────────
+# commit and push
+# ──────────────────────────────────────
+
+cd "$CLONE_DIR"
+
+git add -A
+
+if git diff --cached --quiet; then
+    info "no changes to sync"
+else
+    git commit -m "sync from internal repository"
+    info "pushing to origin/main..."
+    git push -u origin main
+fi
+
+info "done — https://github.com/lostmygithubaccount/dkdc-md-cli"
+
+# ──────────────────────────────────────
+# optionally tag a release
+# ──────────────────────────────────────
+
+if [[ "${1:-}" == "--release" ]]; then
+    VERSION=$(grep '^version' "$MD_DIR/dkdc-md-cli/Cargo.toml" | head -1 | sed 's/.*"\(.*\)"/\1/')
+    TAG="v${VERSION}"
+
+    if git -C "$CLONE_DIR" rev-parse "$TAG" >/dev/null 2>&1; then
+        err "tag $TAG already exists — bump version in dkdc-md-cli/Cargo.toml first"
+        exit 1
+    fi
+
+    info "tagging $TAG..."
+    git -C "$CLONE_DIR" tag "$TAG"
+    git -C "$CLONE_DIR" push origin "$TAG"
+    info "release tag pushed — workflow will build binaries"
+fi

@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    uses: ./.github/workflows/check.yml
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cache/uv
+            ~/Library/Caches/uv
+            dkdc-md-cli/target
+          key: build-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock', 'uv.lock') }}
+          restore-keys: build-${{ matrix.target }}-
+      - run: bin/setup
+      - run: rustup target add ${{ matrix.target }}
+      - run: bin/build-rs --release --target ${{ matrix.target }}
+      - name: Determine version
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Package
+        run: |
+          staging=$(mktemp -d)
+          cp dkdc-md-cli/target/${{ matrix.target }}/release/md "$staging/"
+          cp LICENSE "$staging/"
+          tar -czf dkdc-md-cli-${{ steps.tag.outputs.version }}-${{ matrix.target }}.tar.gz -C "$staging" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dkdc-md-cli-${{ matrix.target }}
+          path: dkdc-md-cli-*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Determine version
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ steps.tag.outputs.version }}" --repo "${{ github.repository }}" --title "${{ steps.tag.outputs.version }}" --generate-notes artifacts/*

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+echo "Installing dkdc-md-cli..."
+cargo install --path dkdc-md-cli --force
+
+echo "Rust install complete!"

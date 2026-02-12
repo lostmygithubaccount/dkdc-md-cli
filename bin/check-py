@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+echo "Running ruff..."
+uv run ruff check .
+uv run ruff format --check .
+
+echo "Python checks passed!"

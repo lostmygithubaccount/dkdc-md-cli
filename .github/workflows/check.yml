@@ -1,0 +1,24 @@
+name: Check
+
+on:
+  workflow_call:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cache/uv
+            dkdc-md-cli/target
+          key: check-${{ runner.os }}-${{ hashFiles('**/Cargo.lock', 'uv.lock') }}
+          restore-keys: check-${{ runner.os }}-
+      - run: bin/setup
+      - run: bin/check

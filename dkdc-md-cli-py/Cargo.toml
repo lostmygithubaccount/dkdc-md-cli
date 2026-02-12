@@ -1,0 +1,16 @@
+[workspace]
+
+[package]
+name = "dkdc-md-cli-py"
+version = "0.1.0"
+edition = "2024"
+authors = ["Cody <cody@dkdc.dev>"]
+license = "MIT"
+
+[lib]
+name = "_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+dkdc-md-cli = { path = "../dkdc-md-cli" }
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py311"] }

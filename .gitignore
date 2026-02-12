@@ -1,0 +1,10 @@
+target/
+dist/
+*.pyc
+__pycache__/
+.venv/
+*.egg-info/
+*.so
+*.dylib
+.DS_Store
+.sync-repo/
