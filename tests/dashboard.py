@@ -70,7 +70,9 @@ STEP_LABELS = {
 
 # Sidebar: run picker
 runs = sorted(all_data["run_id"].unique(), reverse=True)
-run_labels = {r: f"{r} ({len(all_data[all_data['run_id'] == r])} workers)" for r in runs}
+run_labels = {
+    r: f"{r} ({len(all_data[all_data['run_id'] == r])} workers)" for r in runs
+}
 
 st.sidebar.header("Run selection")
 selected_run = st.sidebar.selectbox(
@@ -96,7 +98,12 @@ st.subheader("Summary")
 cols = st.columns(6)
 cols[0].metric("Workers", n_workers)
 cols[1].metric("Passed", n_passed)
-cols[2].metric("Failed", n_failed, delta=f"-{n_failed}" if n_failed else None, delta_color="inverse")
+cols[2].metric(
+    "Failed",
+    n_failed,
+    delta=f"-{n_failed}" if n_failed else None,
+    delta_color="inverse",
+)
 cols[3].metric("Avg Total", f"{df['total_ms'].mean():.0f}ms")
 cols[4].metric("p50 Total", f"{df['total_ms'].quantile(0.5):.0f}ms")
 cols[5].metric("p95 Total", f"{df['total_ms'].quantile(0.95):.0f}ms")
@@ -112,7 +119,7 @@ for col in ["total_ms"] + STEP_COLS:
     label = STEP_LABELS.get(col, "Total")
     perc_data[label] = {
         "min": valid.min(),
-        **{f"p{int(p*100)}": valid.quantile(p) for p in percentiles},
+        **{f"p{int(p * 100)}": valid.quantile(p) for p in percentiles},
         "mean": valid.mean(),
     }
 perc_df = (
@@ -126,7 +133,9 @@ st.dataframe(perc_df, width="stretch")
 
 # Worker outcome by index
 st.subheader("Pass / fail by worker index")
-status_color = df["status"].map({"success": "#2ecc71", "failed": "#e74c3c"}).fillna("#95a5a6")
+status_color = (
+    df["status"].map({"success": "#2ecc71", "failed": "#e74c3c"}).fillna("#95a5a6")
+)
 fig_outcome = go.Figure()
 fig_outcome.add_trace(
     go.Bar(
@@ -134,8 +143,10 @@ fig_outcome.add_trace(
         y=[1] * len(df),
         marker_color=status_color,
         hovertext=df.apply(
-            lambda r: f"Worker {int(r['worker'])}: {r['status']}"
-            + (f"\n{r['error']}" if r.get("error") else ""),
+            lambda r: (
+                f"Worker {int(r['worker'])}: {r['status']}"
+                + (f"\n{r['error']}" if r.get("error") else "")
+            ),
             axis=1,
         ),
         hoverinfo="text",
@@ -154,6 +165,7 @@ ERROR_PREFIX_TO_STEP = {
     "token mismatch": "PRAGMA",
 }
 
+
 def detect_failed_step(error: str) -> str:
     if not error:
         return ""
@@ -161,6 +173,7 @@ def detect_failed_step(error: str) -> str:
         if prefix in error:
             return step
     return error[:40]
+
 
 df["failed_step"] = df.apply(
     lambda r: detect_failed_step(r["error"]) if r["status"] == "failed" else "",
@@ -179,9 +192,7 @@ st.plotly_chart(fig_outcome, width="stretch")
 if n_failed > 0:
     # Show which step each failure occurred at
     fail_step_counts = (
-        df[df["status"] == "failed"]["failed_step"]
-        .value_counts()
-        .reset_index()
+        df[df["status"] == "failed"]["failed_step"].value_counts().reset_index()
     )
     fail_step_counts.columns = ["Failed at step", "Count"]
     fc1, fc2 = st.columns([1, 2])
@@ -191,12 +202,13 @@ if n_failed > 0:
         # Cumulative failure rate by worker index
         df_sorted = df.sort_values("worker")
         df_sorted["cum_failures"] = (df_sorted["status"] == "failed").cumsum()
-        df_sorted["cum_fail_pct"] = df_sorted["cum_failures"] / (df_sorted.index.values + 1) * 100
+        df_sorted["cum_fail_pct"] = (
+            df_sorted["cum_failures"] / (df_sorted.index.values + 1) * 100
+        )
         # Recompute using position
         positions = range(1, len(df_sorted) + 1)
         cum_fail_pct = [
-            df_sorted.iloc[:i]["status"].eq("failed").sum() / i * 100
-            for i in positions
+            df_sorted.iloc[:i]["status"].eq("failed").sum() / i * 100 for i in positions
         ]
         fig_cum = go.Figure(
             go.Scatter(
@@ -235,7 +247,21 @@ with c2:
     st.subheader("Average time per step")
     step_avgs = {}
     step_colors_used = []
-    step_color_map = dict(zip(STEP_COLS, ["#3498db", "#9b59b6", "#e67e22", "#e74c3c", "#c0392b", "#d35400", "#1abc9c", "#95a5a6"]))
+    step_color_map = dict(
+        zip(
+            STEP_COLS,
+            [
+                "#3498db",
+                "#9b59b6",
+                "#e67e22",
+                "#e74c3c",
+                "#c0392b",
+                "#d35400",
+                "#1abc9c",
+                "#95a5a6",
+            ],
+        )
+    )
     for c in STEP_COLS:
         v = df[c].dropna()
         if not v.empty:
@@ -259,7 +285,9 @@ c3, c4 = st.columns(2)
 
 with c3:
     st.subheader("Step latency distributions")
-    melted = df[STEP_COLS].rename(columns=STEP_LABELS).melt(var_name="Step", value_name="ms")
+    melted = (
+        df[STEP_COLS].rename(columns=STEP_LABELS).melt(var_name="Step", value_name="ms")
+    )
     melted = melted.dropna()
     step_order = list(STEP_LABELS.values())
     fig_box = px.box(
@@ -289,7 +317,16 @@ with c4:
 # Stacked bar: per-worker step breakdown
 st.subheader("Per-worker step breakdown")
 fig_stacked = go.Figure()
-colors = ["#3498db", "#9b59b6", "#e67e22", "#e74c3c", "#c0392b", "#d35400", "#1abc9c", "#95a5a6"]
+colors = [
+    "#3498db",
+    "#9b59b6",
+    "#e67e22",
+    "#e74c3c",
+    "#c0392b",
+    "#d35400",
+    "#1abc9c",
+    "#95a5a6",
+]
 for col, color in zip(STEP_COLS, colors):
     fig_stacked.add_trace(
         go.Bar(
@@ -310,7 +347,9 @@ st.plotly_chart(fig_stacked, width="stretch")
 # Failures detail
 if n_failed > 0:
     st.subheader("Failures")
-    failed_df = df[df["status"] == "failed"][["worker", "service_account", "error", "total_ms"]]
+    failed_df = df[df["status"] == "failed"][
+        ["worker", "service_account", "error", "total_ms"]
+    ]
     st.dataframe(failed_df, width="stretch", hide_index=True)
 
     fail_reasons = failed_df["error"].value_counts().reset_index()
@@ -346,8 +385,22 @@ if compare_run:
     comp_data = []
     for col in ["total_ms"] + STEP_COLS:
         label = STEP_LABELS.get(col, "Total")
-        comp_data.append({"Step": label, "Run": str(selected_run), "p50": df[col].quantile(0.5), "p95": df[col].quantile(0.95)})
-        comp_data.append({"Step": label, "Run": str(compare_run), "p50": df2[col].quantile(0.5), "p95": df2[col].quantile(0.95)})
+        comp_data.append(
+            {
+                "Step": label,
+                "Run": str(selected_run),
+                "p50": df[col].quantile(0.5),
+                "p95": df[col].quantile(0.95),
+            }
+        )
+        comp_data.append(
+            {
+                "Step": label,
+                "Run": str(compare_run),
+                "p50": df2[col].quantile(0.5),
+                "p95": df2[col].quantile(0.95),
+            }
+        )
 
     comp_df = __import__("pandas").DataFrame(comp_data)
     fig_comp = px.bar(
@@ -370,34 +423,98 @@ if len(runs) > 1:
     trend_data = []
     for r in runs:
         rdf = all_data[all_data["run_id"] == r]
-        trend_data.append({
-            "run_id": r,
-            "workers": len(rdf),
-            "pass_rate": len(rdf[rdf["status"] == "success"]) / len(rdf) * 100,
-            "p50_total": rdf["total_ms"].quantile(0.5),
-            "p95_total": rdf["total_ms"].quantile(0.95),
-            "p50_select1": rdf["select1_ms"].dropna().quantile(0.5) if not rdf["select1_ms"].dropna().empty else None,
-            "p95_select1": rdf["select1_ms"].dropna().quantile(0.95) if not rdf["select1_ms"].dropna().empty else None,
-            "p50_select3": rdf["select3_ms"].dropna().quantile(0.5) if not rdf["select3_ms"].dropna().empty else None,
-            "p95_select3": rdf["select3_ms"].dropna().quantile(0.95) if not rdf["select3_ms"].dropna().empty else None,
-        })
+        trend_data.append(
+            {
+                "run_id": r,
+                "workers": len(rdf),
+                "pass_rate": len(rdf[rdf["status"] == "success"]) / len(rdf) * 100,
+                "p50_total": rdf["total_ms"].quantile(0.5),
+                "p95_total": rdf["total_ms"].quantile(0.95),
+                "p50_select1": rdf["select1_ms"].dropna().quantile(0.5)
+                if not rdf["select1_ms"].dropna().empty
+                else None,
+                "p95_select1": rdf["select1_ms"].dropna().quantile(0.95)
+                if not rdf["select1_ms"].dropna().empty
+                else None,
+                "p50_select3": rdf["select3_ms"].dropna().quantile(0.5)
+                if not rdf["select3_ms"].dropna().empty
+                else None,
+                "p95_select3": rdf["select3_ms"].dropna().quantile(0.95)
+                if not rdf["select3_ms"].dropna().empty
+                else None,
+            }
+        )
     trend_df = __import__("pandas").DataFrame(trend_data).sort_values("run_id")
     trend_df["run_label"] = trend_df["run_id"].astype(str)
 
     t1, t2 = st.columns(2)
     with t1:
         fig_trend = go.Figure()
-        fig_trend.add_trace(go.Scatter(x=trend_df["run_label"], y=trend_df["p50_total"], name="p50 total", mode="lines+markers"))
-        fig_trend.add_trace(go.Scatter(x=trend_df["run_label"], y=trend_df["p95_total"], name="p95 total", mode="lines+markers"))
-        fig_trend.update_layout(yaxis_title="ms", xaxis_title="Run ID", title="Total latency trend")
+        fig_trend.add_trace(
+            go.Scatter(
+                x=trend_df["run_label"],
+                y=trend_df["p50_total"],
+                name="p50 total",
+                mode="lines+markers",
+            )
+        )
+        fig_trend.add_trace(
+            go.Scatter(
+                x=trend_df["run_label"],
+                y=trend_df["p95_total"],
+                name="p95 total",
+                mode="lines+markers",
+            )
+        )
+        fig_trend.update_layout(
+            yaxis_title="ms", xaxis_title="Run ID", title="Total latency trend"
+        )
         st.plotly_chart(fig_trend, width="stretch")
     with t2:
         fig_trend2 = go.Figure()
-        fig_trend2.add_trace(go.Scatter(x=trend_df["run_label"], y=trend_df["p50_select1"], name="p50 cold", mode="lines+markers"))
-        fig_trend2.add_trace(go.Scatter(x=trend_df["run_label"], y=trend_df["p50_select3"], name="p50 hot", mode="lines+markers"))
-        fig_trend2.add_trace(go.Scatter(x=trend_df["run_label"], y=trend_df["p95_select1"], name="p95 cold", mode="lines+markers", line=dict(dash="dot")))
-        fig_trend2.add_trace(go.Scatter(x=trend_df["run_label"], y=trend_df["p95_select3"], name="p95 hot", mode="lines+markers", line=dict(dash="dot")))
-        fig_trend2.add_trace(go.Scatter(x=trend_df["run_label"], y=trend_df["pass_rate"], name="Pass %", mode="lines+markers", yaxis="y2"))
+        fig_trend2.add_trace(
+            go.Scatter(
+                x=trend_df["run_label"],
+                y=trend_df["p50_select1"],
+                name="p50 cold",
+                mode="lines+markers",
+            )
+        )
+        fig_trend2.add_trace(
+            go.Scatter(
+                x=trend_df["run_label"],
+                y=trend_df["p50_select3"],
+                name="p50 hot",
+                mode="lines+markers",
+            )
+        )
+        fig_trend2.add_trace(
+            go.Scatter(
+                x=trend_df["run_label"],
+                y=trend_df["p95_select1"],
+                name="p95 cold",
+                mode="lines+markers",
+                line=dict(dash="dot"),
+            )
+        )
+        fig_trend2.add_trace(
+            go.Scatter(
+                x=trend_df["run_label"],
+                y=trend_df["p95_select3"],
+                name="p95 hot",
+                mode="lines+markers",
+                line=dict(dash="dot"),
+            )
+        )
+        fig_trend2.add_trace(
+            go.Scatter(
+                x=trend_df["run_label"],
+                y=trend_df["pass_rate"],
+                name="Pass %",
+                mode="lines+markers",
+                yaxis="y2",
+            )
+        )
         fig_trend2.update_layout(
             yaxis_title="ms",
             yaxis2=dict(title="Pass %", overlaying="y", side="right", range=[0, 105]),
