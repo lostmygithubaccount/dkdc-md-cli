@@ -3,7 +3,10 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 echo "Running ruff..."
-uv run ruff check .
-uv run ruff format --check .
+uv run --only-group dev ruff check .
+uv run --only-group dev ruff format --check .
+
+echo "Running ty..."
+uv run --only-group dev ty check
 
 echo "Python checks passed!"

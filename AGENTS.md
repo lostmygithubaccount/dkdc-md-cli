@@ -7,18 +7,20 @@ CLI for the MotherDuck REST API. Rust core with PyO3 Python bindings.
 ## architecture
 
 ```
-dkdc-md-cli/            # pure Rust core (lib + binary)
+crates/dkdc-md-cli/            # pure Rust core (lib + binary)
   src/
-    lib.rs              # module exports, pub fn run()
-    main.rs             # binary entry point
-    cli.rs              # clap CLI definition + command dispatch
-    client.rs           # ureq HTTP client for MotherDuck API
-    auth.rs             # token resolution (env vars)
-dkdc-md-cli-py/         # PyO3 cdylib bindings (own workspace, built by maturin)
+    lib.rs                     # module exports, pub fn run()
+    main.rs                    # binary entry point
+    cli.rs                     # clap CLI definition + command dispatch
+    client.rs                  # ureq HTTP client for MotherDuck API
+    auth.rs                    # token resolution (env vars)
+crates/dkdc-md-cli-py/         # PyO3 cdylib bindings (own workspace, built by maturin)
   src/lib.rs            # single run() function exposed as dkdc_md.core
 src/
   dkdc_md/
     __init__.py         # thin Python wrapper, entry point for `uv tool install .`
+    core.pyi            # type stubs for the PyO3 module (IDE autocomplete)
+    py.typed            # PEP 561 marker (package has inline types)
 ```
 
 The `-py` crate is **not** in the Cargo workspace (cdylib can't link Python symbols via `cargo build`). It's built exclusively by maturin.
@@ -34,10 +36,11 @@ bin/check       # lint + test (bin/check-rs, bin/check-py)
 bin/format      # auto-format (bin/format-rs, bin/format-py)
 bin/test        # run tests (bin/test-rs, bin/test-py)
 bin/install     # install locally (bin/install-rs, bin/install-py)
+bin/bump-version  # bump version (--patch, --minor (default), --major)
 ```
 
 Rust checks: `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`
-Python checks: `ruff check .`, `ruff format --check .`
+Python checks: `ruff check .`, `ruff format --check .`, `ty check`
 
 ## testing
 
@@ -83,7 +86,7 @@ OpenAPI spec: https://api.motherduck.com/docs/specs
 
 ## CI/CD
 
-Public repo: `lostmygithubaccount/dkdc-md-cli`
+Public repo: `lostmygithubaccount/md-cli`
 
 - `.github/workflows/ci.yml` — runs checks on push/PR to main
 - `.github/workflows/check.yml` — reusable workflow (fmt, clippy, test, ruff)

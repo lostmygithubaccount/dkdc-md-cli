@@ -3,9 +3,9 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 echo "Formatting Python code..."
-uv run ruff format .
+uv run --only-group dev ruff format .
 
 echo "Sorting Python imports..."
-uv run ruff check --fix --select I .
+uv run --only-group dev ruff check --fix --select I .
 
 echo "Python formatting complete!"

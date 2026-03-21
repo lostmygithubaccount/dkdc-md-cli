@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# ---------- usage ----------
+
+usage() {
+  echo "Usage: bin/bump-version [--major | --minor | --patch]"
+  echo ""
+  echo "Bump the version across all Rust and Python packages."
+  echo "Default: --minor"
+  exit "${1:-0}"
+}
+
+# ---------- args ----------
+
+BUMP=""
+for arg in "$@"; do
+  case "$arg" in
+    --patch|--minor|--major)
+      if [ -n "$BUMP" ]; then
+        echo "ERROR: cannot combine --$BUMP and $arg" >&2
+        exit 1
+      fi
+      BUMP="${arg#--}"
+      ;;
+    --help|-h)
+      usage 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $arg" >&2
+      usage 1
+      ;;
+  esac
+done
+
+BUMP="${BUMP:-minor}"
+
+# ---------- files ----------
+
+TOML_FILES=(
+  pyproject.toml
+  crates/dkdc-md-cli/Cargo.toml
+  crates/dkdc-md-cli-py/Cargo.toml
+)
+
+# ---------- read current version ----------
+
+CURRENT=$(grep -m1 '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+if [ -z "$CURRENT" ]; then
+  echo "ERROR: could not read version from pyproject.toml" >&2
+  exit 1
+fi
+
+for f in "${TOML_FILES[@]}"; do
+  V=$(grep -m1 '^version = ' "$f" | sed 's/version = "\(.*\)"/\1/')
+  if [ "$V" != "$CURRENT" ]; then
+    echo "ERROR: version mismatch: pyproject.toml=$CURRENT but $f=$V" >&2
+    exit 1
+  fi
+done
+
+# ---------- compute new version ----------
+
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+case "$BUMP" in
+  patch) NEW="$MAJOR.$MINOR.$((PATCH + 1))" ;;
+  minor) NEW="$MAJOR.$((MINOR + 1)).0" ;;
+  major) NEW="$((MAJOR + 1)).0.0" ;;
+esac
+
+echo "Bumping version: $CURRENT -> $NEW ($BUMP)"
+
+# ---------- update files ----------
+
+for f in "${TOML_FILES[@]}"; do
+  sed -i '' "s/^version = \"$CURRENT\"/version = \"$NEW\"/" "$f"
+  echo "  updated $f"
+done
+
+# ---------- regenerate lock files ----------
+
+echo "Regenerating lock files..."
+cargo generate-lockfile --quiet
+echo "  updated Cargo.lock"
+(cd crates/dkdc-md-cli-py && cargo generate-lockfile --quiet)
+echo "  updated crates/dkdc-md-cli-py/Cargo.lock"
+
+uv lock --quiet
+echo "  updated uv.lock"
+
+echo "Done! $CURRENT -> $NEW"

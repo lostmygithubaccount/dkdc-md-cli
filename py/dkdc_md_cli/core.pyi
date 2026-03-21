@@ -1,0 +1,3 @@
+def run(argv: list[str]) -> None:
+    """Run the dkdc-md-cli CLI with the given arguments."""
+    ...

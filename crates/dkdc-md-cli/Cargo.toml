@@ -1,15 +1,13 @@
-[workspace]
-
 [package]
 name = "dkdc-md-cli"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 rust-version = "1.93"
 authors = ["Cody <cody@dkdc.dev>"]
 license = "MIT"
 description = "CLI for the MotherDuck REST API"
-repository = "https://github.com/lostmygithubaccount/dkdc-md-cli"
-homepage = "https://github.com/lostmygithubaccount/dkdc-md-cli"
+repository = "https://github.com/lostmygithubaccount/md-cli"
+homepage = "https://github.com/lostmygithubaccount/md-cli"
 keywords = ["motherduck", "cli", "duckdb", "api"]
 categories = ["command-line-utilities"]
 readme = "../README.md"

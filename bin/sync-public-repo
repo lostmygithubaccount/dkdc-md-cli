@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Mirror dkdc-md-cli source from the dkdc monorepo to lostmygithubaccount/dkdc-md-cli.
+# Mirror md-cli source from the dkdc monorepo to lostmygithubaccount/md-cli.
 # Uses rsync to copy files, then commits and pushes to the public repo.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MD_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-PUBLIC_REPO="lostmygithubaccount/dkdc-md-cli"
+PUBLIC_REPO="lostmygithubaccount/md-cli"
 CLONE_DIR="${MD_DIR}/.sync-repo"
 
 info()  { printf '\033[1;35m[sync]\033[0m %s\n' "$*"; }
@@ -61,18 +61,18 @@ else
     git push -u origin main
 fi
 
-info "done — https://github.com/lostmygithubaccount/dkdc-md-cli"
+info "done — https://github.com/lostmygithubaccount/md-cli"
 
 # ──────────────────────────────────────
 # optionally tag a release
 # ──────────────────────────────────────
 
 if [[ "${1:-}" == "--release" ]]; then
-    VERSION=$(grep '^version' "$MD_DIR/dkdc-md-cli/Cargo.toml" | head -1 | sed 's/.*"\(.*\)"/\1/')
+    VERSION=$(grep '^version' "$MD_DIR/crates/dkdc-md-cli/Cargo.toml" | head -1 | sed 's/.*"\(.*\)"/\1/')
     TAG="v${VERSION}"
 
     if git -C "$CLONE_DIR" rev-parse "$TAG" >/dev/null 2>&1; then
-        err "tag $TAG already exists — bump version in dkdc-md-cli/Cargo.toml first"
+        err "tag $TAG already exists — bump version in crates/dkdc-md-cli/Cargo.toml first"
         exit 1
     fi
 

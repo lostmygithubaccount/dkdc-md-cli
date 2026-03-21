@@ -9,7 +9,7 @@ CLI for the [MotherDuck REST API](https://motherduck.com/docs/sql-reference/rest
 Recommended:
 
 ```bash
-curl -LsSf https://dkdc.sh/dkdc-md-cli/install.sh | sh
+curl -LsSf https://dkdc.sh/md-cli/install.sh | sh
 ```
 
 Pre-built binaries are available for Linux and macOS via Python (`uv`). Windows users should install via `cargo` or use macOS/Linux.

@@ -6,5 +6,6 @@ __pycache__/
 *.egg-info/
 *.so
 *.dylib
+*.dSYM/
 .DS_Store
 .sync-repo/

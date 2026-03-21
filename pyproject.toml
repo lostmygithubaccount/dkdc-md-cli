@@ -1,6 +1,6 @@
 [project]
 name = "dkdc-md-cli"
-version = "0.1.4"
+version = "0.1.5"
 description = "CLI for the MotherDuck REST API"
 requires-python = ">=3.11"
 license = "MIT"
@@ -10,21 +10,25 @@ readme = "README.md"
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/lostmygithubaccount/dkdc-md-cli"
-Repository = "https://github.com/lostmygithubaccount/dkdc-md-cli"
-Issues = "https://github.com/lostmygithubaccount/dkdc-md-cli/issues"
+Homepage = "https://github.com/lostmygithubaccount/md-cli"
+Repository = "https://github.com/lostmygithubaccount/md-cli"
+Issues = "https://github.com/lostmygithubaccount/md-cli/issues"
 
 [project.scripts]
 md = "dkdc_md_cli:main"
 
 [dependency-groups]
-dev = ["maturin>=1.0,<2.0", "ruff>=0.9", "pytest>=8", "ipython>=9.10.0"]
+dev = ["maturin>=1.0,<2.0", "ruff>=0.9", "ty>=0.0.19", "pytest>=8", "ipython>=9.10.0"]
 
 [tool.maturin]
 module-name = "dkdc_md_cli.core"
 python-packages = ["dkdc_md_cli"]
-python-source = "src"
-manifest-path = "dkdc-md-cli-py/Cargo.toml"
+python-source = "py"
+manifest-path = "crates/dkdc-md-cli-py/Cargo.toml"
+
+[tool.ty.src]
+# Exclude standalone uv scripts — ty can't resolve their inline dependencies
+exclude = ["tests/dashboard.py"]
 
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
@@ -33,6 +37,6 @@ build-backend = "maturin"
 [tool.uv]
 cache-keys = [
   { file = "pyproject.toml" },
-  { file = "dkdc-md-cli/**/*.rs" },
-  { file = "dkdc-md-cli-py/**/*.rs" },
+  { file = "crates/dkdc-md-cli/**/*.rs" },
+  { file = "crates/dkdc-md-cli-py/**/*.rs" },
 ]

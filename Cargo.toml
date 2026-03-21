@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/dkdc-md-cli",
+]
+exclude = ["crates/dkdc-md-cli-py"]
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
