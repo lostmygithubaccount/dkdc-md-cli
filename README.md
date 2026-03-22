@@ -2,6 +2,12 @@
 
 CLI for the [MotherDuck REST API](https://motherduck.com/docs/sql-reference/rest-api/motherduck-rest-api/).
 
+[![GitHub Release](https://img.shields.io/github/v/release/lostmygithubaccount/md-cli?color=blue)](https://github.com/lostmygithubaccount/md-cli/releases)
+[![PyPI](https://img.shields.io/pypi/v/dkdc-md-cli?color=blue)](https://pypi.org/project/dkdc-md-cli/)
+[![crates.io](https://img.shields.io/crates/v/dkdc-md-cli?color=blue)](https://crates.io/crates/dkdc-md-cli)
+[![CI](https://img.shields.io/github/actions/workflow/status/lostmygithubaccount/md-cli/ci.yml?branch=main&label=CI)](https://github.com/lostmygithubaccount/md-cli/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-8A2BE2.svg)](https://github.com/lostmygithubaccount/md-cli/blob/main/LICENSE)
+
 **Important**: This is a personal project. I am not affiliated with MotherDuck.
 
 ## Install

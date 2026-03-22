@@ -17,7 +17,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             ~/.cache/uv
-            dkdc-md-cli/target
+            target
           key: check-${{ runner.os }}-${{ hashFiles('**/Cargo.lock', 'uv.lock') }}
           restore-keys: check-${{ runner.os }}-
       - run: bin/setup

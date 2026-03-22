@@ -44,7 +44,7 @@ jobs:
             ~/.cargo/git
             ~/.cache/uv
             ~/Library/Caches/uv
-            dkdc-md-cli/target
+            target
           key: wheel-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock', 'uv.lock') }}
           restore-keys: wheel-${{ matrix.target }}-
       - run: bin/setup

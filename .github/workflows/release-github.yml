@@ -1,4 +1,4 @@
-name: Release
+name: Release GitHub
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
             ~/.cargo/git
             ~/.cache/uv
             ~/Library/Caches/uv
-            dkdc-md-cli/target
+            target
           key: build-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock', 'uv.lock') }}
           restore-keys: build-${{ matrix.target }}-
       - run: bin/setup
@@ -61,7 +61,7 @@ jobs:
       - name: Package
         run: |
           staging=$(mktemp -d)
-          cp dkdc-md-cli/target/${{ matrix.target }}/release/md "$staging/"
+          cp target/${{ matrix.target }}/release/md "$staging/"
           cp LICENSE "$staging/"
           tar -czf dkdc-md-cli-${{ steps.tag.outputs.version }}-${{ matrix.target }}.tar.gz -C "$staging" .
       - uses: actions/upload-artifact@v4
