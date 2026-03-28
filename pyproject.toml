@@ -10,9 +10,9 @@ readme = "README.md"
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/lostmygithubaccount/md-cli"
-Repository = "https://github.com/lostmygithubaccount/md-cli"
-Issues = "https://github.com/lostmygithubaccount/md-cli/issues"
+Homepage = "https://github.com/dkdc-io/md-cli"
+Repository = "https://github.com/dkdc-io/md-cli"
+Issues = "https://github.com/dkdc-io/md-cli/issues"
 
 [project.scripts]
 md = "dkdc_md_cli:main"

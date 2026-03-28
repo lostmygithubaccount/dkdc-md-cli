@@ -86,7 +86,7 @@ OpenAPI spec: https://api.motherduck.com/docs/specs
 
 ## CI/CD
 
-Public repo: `lostmygithubaccount/md-cli`
+Public repo: `dkdc-io/md-cli`
 
 - `.github/workflows/ci.yml` — runs checks on push/PR to main
 - `.github/workflows/check.yml` — reusable workflow (fmt, clippy, test, ruff)
