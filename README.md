@@ -32,7 +32,13 @@ cargo:
 cargo install dkdc-md-cli
 ```
 
-Either option will install the `md` command globally. You can use `uvx` to run it without installing:
+Verify installation:
+
+```bash
+md --version
+```
+
+You can use `uvx` to run it without installing:
 
 ```bash
 uvx --from dkdc-md-cli md
