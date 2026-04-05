@@ -9,6 +9,11 @@ const ENV_VARS: &[&str] = &[
     "MOTHERDUCK_API_KEY",
 ];
 
+/// Trim whitespace and convert to an owned `String`.
+fn trimmed(s: &str) -> String {
+    s.trim().to_string()
+}
+
 /// Resolve token: CLI flag takes precedence over env vars.
 /// Pass `Some("-")` to read from stdin.
 pub fn resolve_token_or(cli_token: Option<&str>) -> Result<String> {
@@ -24,9 +29,9 @@ fn resolve_token_or_with(
         if token == "-" {
             return read_token_from_reader(stdin);
         }
-        let trimmed = token.trim();
-        anyhow::ensure!(!trimmed.is_empty(), "--token value must not be empty");
-        return Ok(trimmed.to_string());
+        let t = trimmed(token);
+        anyhow::ensure!(!t.is_empty(), "--token value must not be empty");
+        return Ok(t);
     }
     resolve_token_with(env_var)
 }
@@ -36,9 +41,9 @@ fn read_token_from_reader(mut reader: impl Read) -> Result<String> {
     reader
         .read_to_string(&mut buf)
         .context("failed to read token from stdin")?;
-    let trimmed = buf.trim().to_string();
-    anyhow::ensure!(!trimmed.is_empty(), "stdin was empty; expected a token");
-    Ok(trimmed)
+    let t = trimmed(&buf);
+    anyhow::ensure!(!t.is_empty(), "stdin was empty; expected a token");
+    Ok(t)
 }
 
 fn resolve_token_with(
@@ -46,9 +51,9 @@ fn resolve_token_with(
 ) -> Result<String> {
     for var in ENV_VARS {
         if let Ok(val) = env_var(var) {
-            let trimmed = val.trim().to_string();
-            if !trimmed.is_empty() {
-                return Ok(trimmed);
+            let t = trimmed(&val);
+            if !t.is_empty() {
+                return Ok(t);
             }
         }
     }

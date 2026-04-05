@@ -9,6 +9,7 @@ use ureq::{Agent, http};
 const BASE_URL: &str = "https://api.motherduck.com";
 const TIMEOUT: Duration = Duration::from_secs(10);
 const USER_AGENT: &str = concat!("dkdc-md-cli/", env!("CARGO_PKG_VERSION"));
+const SUCCESS_STATUS: std::ops::Range<u16> = 200..300;
 
 /// Characters that must be percent-encoded in a URL path segment.
 const PATH_SEGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'#').add(b'%').add(b'/').add(b'?');
@@ -150,7 +151,7 @@ impl MotherduckClient {
     // -- Ducklings --
 
     pub fn get_duckling_config(&self, username: &str) -> Result<Value> {
-        self.get(&format!("/v1/users/{}/instances", encode_path(username),))
+        self.get(&format!("/v1/users/{}/instances", encode_path(username)))
     }
 
     pub fn set_duckling_config(
@@ -189,7 +190,7 @@ fn handle_response(mut resp: http::Response<ureq::Body>) -> Result<Value> {
 
 fn parse_response(status: u16, text: String) -> Result<Value> {
     match serde_json::from_str::<Value>(&text) {
-        Ok(body) if (200..300).contains(&status) => Ok(body),
+        Ok(body) if SUCCESS_STATUS.contains(&status) => Ok(body),
         Ok(body) => {
             let message = body
                 .get("message")
@@ -197,7 +198,7 @@ fn parse_response(status: u16, text: String) -> Result<Value> {
                 .unwrap_or(&text);
             bail!("API error ({status}): {message}");
         }
-        Err(_) if (200..300).contains(&status) => Ok(Value::String(text)),
+        Err(_) if SUCCESS_STATUS.contains(&status) => Ok(Value::String(text)),
         Err(_) => bail!("API error ({status}): {text}"),
     }
 }
