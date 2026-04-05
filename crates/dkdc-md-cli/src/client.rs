@@ -8,14 +8,50 @@ use ureq::{Agent, http};
 
 const BASE_URL: &str = "https://api.motherduck.com";
 const TIMEOUT: Duration = Duration::from_secs(10);
-const USER_AGENT: &str = concat!("dkdc-md-cli/", env!("CARGO_PKG_VERSION"));
+const USER_AGENT_VALUE: &str = concat!("dkdc-md-cli/", env!("CARGO_PKG_VERSION"));
 const SUCCESS_STATUS: std::ops::Range<u16> = 200..300;
+const CONTENT_TYPE_JSON: &str = "application/json";
+
+// API path segments
+const API_V1: &str = "/v1";
+const USERS: &str = "users";
+const TOKENS: &str = "tokens";
+const INSTANCES: &str = "instances";
+const ACTIVE_ACCOUNTS: &str = "active_accounts";
 
 /// Characters that must be percent-encoded in a URL path segment.
 const PATH_SEGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'#').add(b'%').add(b'/').add(b'?');
 
 fn encode_path(s: &str) -> String {
     utf8_percent_encode(s, PATH_SEGMENT).to_string()
+}
+
+fn users_path() -> String {
+    format!("{API_V1}/{USERS}")
+}
+
+fn user_path(username: &str) -> String {
+    format!("{API_V1}/{USERS}/{}", encode_path(username))
+}
+
+fn user_tokens_path(username: &str) -> String {
+    format!("{API_V1}/{USERS}/{}/{TOKENS}", encode_path(username))
+}
+
+fn user_token_path(username: &str, token_id: &str) -> String {
+    format!(
+        "{API_V1}/{USERS}/{}/{TOKENS}/{}",
+        encode_path(username),
+        encode_path(token_id),
+    )
+}
+
+fn user_instances_path(username: &str) -> String {
+    format!("{API_V1}/{USERS}/{}/{INSTANCES}", encode_path(username))
+}
+
+fn active_accounts_path() -> String {
+    format!("{API_V1}/{ACTIVE_ACCOUNTS}")
 }
 
 pub struct MotherduckClient {
@@ -60,8 +96,8 @@ impl MotherduckClient {
         let resp = self
             .agent
             .get(&url)
-            .header("Authorization", &self.bearer)
-            .header("User-Agent", USER_AGENT)
+            .header(http::header::AUTHORIZATION, &self.bearer)
+            .header(http::header::USER_AGENT, USER_AGENT_VALUE)
             .call()
             .context("request failed")?;
         handle_response(resp).with_context(|| format!("GET {path}"))
@@ -72,8 +108,8 @@ impl MotherduckClient {
         let resp = self
             .agent
             .delete(&url)
-            .header("Authorization", &self.bearer)
-            .header("User-Agent", USER_AGENT)
+            .header(http::header::AUTHORIZATION, &self.bearer)
+            .header(http::header::USER_AGENT, USER_AGENT_VALUE)
             .call()
             .context("request failed")?;
         handle_response(resp).with_context(|| format!("DELETE {path}"))
@@ -85,9 +121,9 @@ impl MotherduckClient {
         let resp = self
             .agent
             .post(&url)
-            .header("Authorization", &self.bearer)
-            .header("User-Agent", USER_AGENT)
-            .header("Content-Type", "application/json")
+            .header(http::header::AUTHORIZATION, &self.bearer)
+            .header(http::header::USER_AGENT, USER_AGENT_VALUE)
+            .header(http::header::CONTENT_TYPE, CONTENT_TYPE_JSON)
             .send(&bytes)
             .context("request failed")?;
         handle_response(resp).with_context(|| format!("POST {path}"))
@@ -99,9 +135,9 @@ impl MotherduckClient {
         let resp = self
             .agent
             .put(&url)
-            .header("Authorization", &self.bearer)
-            .header("User-Agent", USER_AGENT)
-            .header("Content-Type", "application/json")
+            .header(http::header::AUTHORIZATION, &self.bearer)
+            .header(http::header::USER_AGENT, USER_AGENT_VALUE)
+            .header(http::header::CONTENT_TYPE, CONTENT_TYPE_JSON)
             .send(&bytes)
             .context("request failed")?;
         handle_response(resp).with_context(|| format!("PUT {path}"))
@@ -110,17 +146,17 @@ impl MotherduckClient {
     // -- Users --
 
     pub fn create_user(&self, username: &str) -> Result<Value> {
-        self.post_json("/v1/users", &json!({"username": username}))
+        self.post_json(&users_path(), &json!({"username": username}))
     }
 
     pub fn delete_user(&self, username: &str) -> Result<Value> {
-        self.delete(&format!("/v1/users/{}", encode_path(username)))
+        self.delete(&user_path(username))
     }
 
     // -- Tokens --
 
     pub fn list_tokens(&self, username: &str) -> Result<Value> {
-        self.get(&format!("/v1/users/{}/tokens", encode_path(username)))
+        self.get(&user_tokens_path(username))
     }
 
     pub fn create_token(
@@ -131,7 +167,7 @@ impl MotherduckClient {
         token_type: Option<&str>,
     ) -> Result<Value> {
         self.post_json(
-            &format!("/v1/users/{}/tokens", encode_path(username)),
+            &user_tokens_path(username),
             &CreateTokenRequest {
                 name,
                 ttl,
@@ -141,17 +177,13 @@ impl MotherduckClient {
     }
 
     pub fn delete_token(&self, username: &str, token_id: &str) -> Result<Value> {
-        self.delete(&format!(
-            "/v1/users/{}/tokens/{}",
-            encode_path(username),
-            encode_path(token_id),
-        ))
+        self.delete(&user_token_path(username, token_id))
     }
 
     // -- Ducklings --
 
     pub fn get_duckling_config(&self, username: &str) -> Result<Value> {
-        self.get(&format!("/v1/users/{}/instances", encode_path(username)))
+        self.get(&user_instances_path(username))
     }
 
     pub fn set_duckling_config(
@@ -162,7 +194,7 @@ impl MotherduckClient {
         rs_flock_size: u32,
     ) -> Result<Value> {
         self.put_json(
-            &format!("/v1/users/{}/instances", encode_path(username)),
+            &user_instances_path(username),
             &json!({
                 "config": {
                     "read_write": { "instance_size": rw_size },
@@ -175,7 +207,7 @@ impl MotherduckClient {
     // -- Accounts --
 
     pub fn list_active_accounts(&self) -> Result<Value> {
-        self.get("/v1/active_accounts")
+        self.get(&active_accounts_path())
     }
 }
 
